@@ -38,6 +38,7 @@ def main():
         image = Image.open(uploaded_file)
         st.image(image, caption="Imagen cargada", use_column_width=True)
 
+        model_path = Path(ajustes.DETECCIÓN_MODEL)
         model_path = 'ruta/al/archivo/modelo.pt'  # Reemplazar con la ruta correcta a tu archivo .pt
         model = load_model(model_path)
 
