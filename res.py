@@ -34,4 +34,4 @@ if uploaded_file is not None:
     st.write(f"Predicciones (Top 3):")
     for i, (imagenet_id, label, score) in enumerate(predictions):
         st.write(f"{i + 1}: {label} ({score:.2f})")
-
+ 
