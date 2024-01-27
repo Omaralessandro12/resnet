@@ -1,51 +1,37 @@
 import streamlit as st
-import torch
-from torchvision import transforms
-from PIL import Image
-from torchvision.models import resnet50
-from torchvision import models
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
+import numpy as np
 
-def load_model(model_path):
-    model = models.resnet50(pretrained=False)
-    model.fc = torch.nn.Linear(2048, num_classes)
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
-    return model
+# Cargar el modelo ResNet50 preentrenado
+model = ResNet50(weights='imagenet')
 
-def preprocess_image(image):
-    preprocess = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    input_tensor = preprocess(image)
-    input_batch = input_tensor.unsqueeze(0)
-    return input_batch
+def predict_image(img_path):
+    # Cargar la imagen y preprocesarla para hacerla compatible con ResNet50
+    img = image.load_img(img_path, target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = preprocess_input(img_array)
 
-def predict(image, model):
-    with torch.no_grad():
-        input_tensor = preprocess_image(image)
-        output = model(input_tensor)
-        return output
+    # Realizar la predicción
+    predictions = model.predict(img_array)
+    decoded_predictions = decode_predictions(predictions, top=3)[0]
 
-def main():
-    st.title("Aplicación de Detección de Objetos con ResNet-50")
+    return decoded_predictions
 
-    uploaded_file = st.file_uploader("Cargar imagen", type=["jpg", "jpeg", "png"])
+st.title("Aplicación de Detección de Objetos con ResNet50")
 
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Imagen cargada", use_column_width=True)
+uploaded_file = st.file_uploader("Cargar una imagen...", type="jpg")
 
-        model_path = Path(ajustes.DETECCIÓN_MODEL)
-        model_path = 'ruta/al/archivo/modelo.pt'  # Reemplazar con la ruta correcta a tu archivo .pt
-        model = load_model(model_path)
+if uploaded_file is not None:
+    st.image(uploaded_file, caption='Imagen de entrada.', use_column_width=True)
+    st.write("")
+    st.write("Clasificando...")
 
-        prediction = predict(image, model)
+    # Hacer la predicción
+    predictions = predict_image(uploaded_file)
+    
+    st.write(f"Predicciones (Top 3):")
+    for i, (imagenet_id, label, score) in enumerate(predictions):
+        st.write(f"{i + 1}: {label} ({score:.2f})")
 
-        st.write("Resultados de la predicción:")
-        st.json(prediction.tolist())
-
-if __name__ == "__main__":
-    main()
